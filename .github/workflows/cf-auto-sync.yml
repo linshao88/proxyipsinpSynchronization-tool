@@ -48,6 +48,9 @@ jobs:
         with:
           commit_message: "docs: 自动更新最新IP"
           file_pattern: "ips-v4.txt"
+          internal_git_options: "--rebase"
+          push_options: "--force"
+
 
 
 
