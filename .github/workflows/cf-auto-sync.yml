@@ -43,18 +43,25 @@ jobs:
           SCAN_COUNT: '2000' # Number of IPs to test per run
         run: python scripts/cf_scanner_sync.py
 
-      # 在提交前拉取远程最新代码，防止冲突导致的推送拒绝
-      - name: Pull Latest Changes
+      - name: Commit and Push IP Log (Native Git)
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase || true
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # 检查 ips-v4.txt 是否有更新
+          if git status --porcelain | grep -q "ips-v4.txt"; then
+            git add ips-v4.txt
+            git commit -m "docs: 自动更新最新IP"
+            
+            # 拉取远程最新改动并变基合并，避免冲突
+            git pull origin main --rebase || git rebase --skip
+            
+            # 推送到 main 分支
+            git push origin main
+          else
+            echo "IP 文件没有变动，无需提交"
+          fi
 
-      - name: Commit and Push IP Log
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "docs: 自动更新最新IP"
-          file_pattern: "ips-v4.txt"
 
 
 
