@@ -19,7 +19,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          # 获取完整的 Git 提交历史，防止 commit/push 时出现分支追踪异常
           fetch-depth: 0
 
       - name: Setup Python
@@ -32,24 +31,22 @@ jobs:
 
       - name: Run CF Scanner and Sync
         env: 
-          # GitHub Secrets injected as environment variables
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
           CF_TARGET_DOMAIN: ${{ secrets.CF_TARGET_DOMAIN }}
           CF_EMAIL: ${{ secrets.CF_EMAIL }}
-          SYNC_COUNT: '5' # Number of IPs to keep in DNS
-          SCAN_COUNT: '2000' # Number of IPs to test per run
+          SYNC_COUNT: '5' 
+          SCAN_COUNT: '2000' 
         run: python scripts/cf_scanner_sync.py
-
-      # 新增：在提交前拉取远端最新变更，避免代码不同步导致推送失败
-      - name: Pull latest remote changes
-        run: git pull --rebase origin ${{ github.ref_name }}
 
       - name: Commit and Push IP Log
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs: 自动更新最新IP"
+          commit_message: "docs: 自动更新最新IP [skip ci]"
           file_pattern: "ips-v4.txt"
+          push_options: '--force'
+
+
 
 
 
