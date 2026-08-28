@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.head_ref }}
+          ref: main
           fetch-depth: 0
 
       - name: Setup Python
@@ -43,13 +43,19 @@ jobs:
           SCAN_COUNT: '2000' # Number of IPs to test per run
         run: python scripts/cf_scanner_sync.py
 
+      # 在提交前拉取远程最新代码，防止冲突导致的推送拒绝
+      - name: Pull Latest Changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase || true
+
       - name: Commit and Push IP Log
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "docs: 自动更新最新IP"
           file_pattern: "ips-v4.txt"
-          internal_git_options: "--rebase"
-          push_options: "--force"
+
 
 
 
