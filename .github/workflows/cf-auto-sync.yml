@@ -1,10 +1,10 @@
-Name: Cloudflare IP Auto Scanner & Sync
+name: Cloudflare IP Auto Scanner & Sync
 
 on:
   schedule:
-    # 早上 5:00 (UTC 21:00)
-    - cron: '0 21 * * *'
-    # 晚上 19:00 - 23:00 每小时 (UTC 11:00 - 15:00)
+    # 北京时间 6:00, 8:00, 10:00 (对应 UTC 22:00, 0:00, 2:00)
+    - cron: '0 22,0,2 * * *'
+    # 晚上 19:00 - 23:00 每小时一次 (UTC 11:00 - 15:00)
     - cron: '0 11-15 * * *'
 
   # Allow manual trigger from the GitHub Actions tab
@@ -45,6 +45,8 @@ jobs:
           commit_message: "docs: 自动更新最新IP [skip ci]"
           file_pattern: "ips-v4.txt"
           push_options: '--force'
+
+
 
 
 
