@@ -48,19 +48,24 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 1. 优先拉取远端最新提交（使用 rebase 模式保持提交历史整洁）
-          git pull origin main --rebase || git rebase --skip
+          # 1. 暂存本地生成的 IP 文件变动
+          git stash
           
-          # 2. 检查 ips-v4.txt 是否有更新
+          # 2. 拉取远程最新提交
+          git pull origin main --rebase || true
+          
+          # 3. 恢复暂存的文件
+          git stash pop || true
+          
+          # 4. 提交并强制推送
           if git status --porcelain | grep -q "ips-v4.txt"; then
             git add ips-v4.txt
             git commit -m "docs: 自动更新最新优选 IP [skip ci]"
-            
-            # 3. 强行或直接推送
-            git push origin main || git push origin main --force
+            git push origin main
           else
             echo "IP 文件无变动，无需提交"
           fi
+
 
 
 
