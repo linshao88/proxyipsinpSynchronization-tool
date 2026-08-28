@@ -20,8 +20,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
           fetch-depth: 0
 
       - name: Setup Python
@@ -43,28 +41,20 @@ jobs:
           SCAN_COUNT: '2000' # Number of IPs to test per run
         run: python scripts/cf_scanner_sync.py
 
-      - name: Commit and Push IP Log (Native Git)
+      - name: Commit and Push IP Log
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           
-          # 1. 暂存本地生成的 IP 文件变动
-          git stash
-          
-          # 2. 拉取远程最新提交
+          # 暂存并拉取最新提交，防止冲突
+          git stash || true
           git pull origin main --rebase || true
-          
-          # 3. 恢复暂存的文件
           git stash pop || true
           
-          # 4. 提交并强制推送
-          if git status --porcelain | grep -q "ips-v4.txt"; then
-            git add ips-v4.txt
-            git commit -m "docs: 自动更新最新优选 IP [skip ci]"
-            git push origin main
-          else
-            echo "IP 文件无变动，无需提交"
-          fi
+          git add ips-v4.txt
+          # 仅当文件有变动时才提交和推送（已修正半角英文括号）
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: 自动更新最新优选 IP [skip ci]" && git push)
+
 
 
 
