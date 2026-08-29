@@ -29,7 +29,7 @@ jobs:
       - name: Install Dependencies
         run: pip install requests
 
-      - name: Run CF Scanner and Sync
+      -  name: Run CF Scanner and Sync
         env: 
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -40,11 +40,13 @@ jobs:
         run: python scripts/cf_scanner_sync.py
 
       - name: Commit and Push IP Log
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "docs: 自动更新最新IP [skip ci]"
-          file_pattern: "ips-v4.txt"
-          push_options: '--force'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add ips-v4.txt
+          git commit -m "docs: 自动更新最新优选 IP [skip ci]" || exit 0
+          git push origin main --force
+
 
 
 
