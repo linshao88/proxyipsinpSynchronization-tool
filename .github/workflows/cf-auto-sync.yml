@@ -1,4 +1,4 @@
-name: Cloudflare IP Auto Scanner & Sync
+Name: Cloudflare IP Auto Scanner & Sync
 
 on:
   schedule:
@@ -65,55 +65,41 @@ jobs:
           python scripts/cf_scanner_sync.py
 
       # ==============================
-      # 5. 提交并推送 IP 文件
+      # 5. 提交并推送 IP 文件（已解决冲突）
       # ==============================
       - name: Commit and Push IP Log
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          echo "检查 ips-v4.txt 是否发生变化..."
-
-          # 添加 IP 文件
-          git add ips-v4.txt
-
-          # 如果没有变化，不创建空提交
-          if git diff --cached --quiet; then
-            echo "ips-v4.txt 没有变化，无需提交。"
-            exit 0
-          fi
-
-          # 创建提交
-          git commit -m "docs: 自动更新最新优选 IP [skip ci]"
-
-          # ==============================
-          # 推送机制
-          # 最多重试 5 次，避免远程分支
-          # 在工作流运行期间发生变化导致失败
-          # ==============================
+          # 备份刚刚扫描出来的最新 IP 文件
+          cp ips-v4.txt /tmp/ips-v4.txt.bak
 
           for i in 1 2 3 4 5; do
             echo "======================================"
             echo "第 $i/5 次尝试同步并推送..."
             echo "======================================"
 
-            # 获取远程最新 main
+            # 拉取远程最新分支，防止远程有新提交
             git fetch origin main
+            git reset --hard origin/main
 
-            # 检查本地是否落后远程
-            if git merge-base --is-ancestor HEAD origin/main; then
-              echo "当前提交已经包含远程最新提交。"
-            else
-              echo "检测到远程有新的提交，执行 rebase..."
+            # 还原最新扫描出来的 IP 文件
+            cp /tmp/ips-v4.txt.bak ips-v4.txt
 
-              if ! git rebase origin/main; then
-                echo "Rebase 发生冲突，无法自动解决。"
-                git rebase --abort || true
-                exit 1
-              fi
+            # 添加 IP 文件
+            git add ips-v4.txt
+
+            # 如果文件完全没有变化，无需提交直接退出
+            if git diff --cached --quiet; then
+              echo "ips-v4.txt 没有变化，无需提交。"
+              exit 0
             fi
 
-            # 推送到 main
+            # 创建新提交
+            git commit -m "docs: 自动更新最新优选 IP [skip ci]"
+
+            # 推送到远程 main 分支
             if git push origin HEAD:main; then
               echo "======================================"
               echo "推送成功！"
@@ -121,7 +107,7 @@ jobs:
               exit 0
             fi
 
-            echo "推送失败，3 秒后重新获取远程代码并重试..."
+            echo "推送失败，3 秒后重试..."
             sleep 3
           done
 
@@ -129,6 +115,7 @@ jobs:
           echo "连续 5 次推送失败！"
           echo "======================================"
           exit 1
+
 
 
 
