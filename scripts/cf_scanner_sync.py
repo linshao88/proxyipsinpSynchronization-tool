@@ -173,7 +173,7 @@ def main():
     else:
         print(f"Target Regions dynamically set to: {target_regions}")
     
-    check_api_url = "https://proxyip.xxxxxxxx.nyc.mn/check"
+    check_api_url = "https://check.proxyip.cmliussss.net/check"
     sync_count = int(os.environ.get("SYNC_COUNT", 10))
     scan_count = int(os.environ.get("SCAN_COUNT", 2000))
     
@@ -234,19 +234,23 @@ def main():
                 result = future.result()
                 if result:
                     colo = result.get('colo', 'UNK').upper()
-                    if colo != 'UNK' and (is_scan_all or colo in target_regions):
-                        if colo not in valid_ips_by_region:
-                            valid_ips_by_region[colo] = []
+                    # 检测接口返回的 colo 随其探针路由漂移（同一 IP 多次检测结果不一致），
+                    # 不能再按 colo 精确筛选地区：定向模式下有效 IP 统一归入目标地区，
+                    # 之后按延迟排序取最快的 sync_count 个同步到目标子域名。
+                    bucket = colo if is_scan_all else target_regions[0]
+                    if colo != 'UNK':
+                        if bucket not in valid_ips_by_region:
+                            valid_ips_by_region[bucket] = []
                             
                         if is_scan_all:
                             total_collected = sum(len(ips) for ips in valid_ips_by_region.values())
                             if total_collected < ALL_MODE_LIMIT:
-                                valid_ips_by_region[colo].append(result)
-                                print(f"[FOUND {colo}] {result['ip']} (Total ALL: {total_collected + 1}/{ALL_MODE_LIMIT})")
+                                valid_ips_by_region[bucket].append(result)
+                                print(f"[FOUND {bucket}] {result['ip']} (Total ALL: {total_collected + 1}/{ALL_MODE_LIMIT})")
                         else:
-                            if len(valid_ips_by_region[colo]) < sync_count:
-                                valid_ips_by_region[colo].append(result)
-                                print(f"[FOUND {colo}] {result['ip']} (Total {colo}: {len(valid_ips_by_region[colo])}/{sync_count})")
+                            if len(valid_ips_by_region[bucket]) < sync_count:
+                                valid_ips_by_region[bucket].append(result)
+                                print(f"[FOUND {bucket}] {result['ip']} (Total {bucket}: {len(valid_ips_by_region[bucket])}/{sync_count})")
                         
                 # Early exit check
                 total_collected = sum(len(ips) for ips in valid_ips_by_region.values())
